@@ -1,0 +1,92 @@
+---
+title: "EDS241: Assignment 2"
+author: "Connor Flynn"
+date: '`r format(Sys.time(), "%m/%d/%Y")`'
+output: 
+  pdf_document:
+    toc: false
+    number_sections: yes
+header-includes:
+  - \setlength{\parindent}{1em}
+  - \usepackage{float}
+--- 
+
+``` {r setup, echo = FALSE, message = FALSE, warning = FALSE}
+
+# set default chunk options
+knitr::opts_chunk$set(fig.width = 4, fig.height = 3, 
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+
+# load packages
+packages=c("stargazer", "here", "tidyr", "dplyr","stringr", "janitor", 
+           "cowplot", "ggplot2", "tinytex", "datasets", "tibble", "openxlsx", 
+           'estimatr', "knitr", "car", "readxl")
+
+for (i in packages) {
+  if (require(i,character.only=TRUE)==FALSE) {
+    install.packages(i,repos='http://cran.us.r-project.org')
+  }
+  else {
+    require(i,character.only=TRUE)
+  }
+}
+
+#devtools::install_github('rstudio/rmarkdown')
+options(scipen=999) # not scientific notation
+
+
+```
+
+
+
+```{r}
+data <- read_excel(here("data/NBP.xls"))
+```
+
+
+```{r}
+Dnox_masstons_plot <- ggplot(data = data, aes(x = Dnox_masstons)) +
+  geom_histogram(bins = 50)
+
+Dnox_masstons_plot
+```
+```{r}
+med <- median(data$PctBlack)
+```
+
+```{r}
+data <- data %>%
+  mutate(D = ifelse(PctBlack > med, c(1), c(0)))
+  Ave_PctBlack <- data %>%
+  filter(D == 1) %>%
+  summarise(Ave_PctBlack = mean(PctBlack))
+  
+  
+Ave_PctBlack
+```
+The average of PctBlack for counties above the median is 19.31%
+
+```{r}
+lm_robust(data = data, Dnox_masstons ~ NBP)
+```
+
+For counties where the NOx Budget Program was not implemented, the average change in annual NOx emissions from all power plants was -3.6 tons. 
+For counties where the NOx Budget Program was implemented, the average change in annual NOx emissions from all power plants increased by -3.9 tons. (Resulting in an -7.5 tons average change in annual NOx emissions from all power plants)
+
+```{r}
+ggplot(data = data, aes(x = NBP, y = Dnox_masstons)) +
+  geom_smooth(method = lm)
+```
+```{r}
+regression_test <- data %>% 
+  group_by(NBP) %>% 
+  summarise(mean_Dnox_masstons = mean(Dnox_masstons))
+
+regression_test
+```
+
+
+
+
+
